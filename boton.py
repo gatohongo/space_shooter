@@ -1,5 +1,5 @@
-class Boton():
-	def __init__(self, imagen, posicion, texto, font, color_principal, color_sobrepuesto):
+class Boton:
+	def __init__(self, imagen=None, posicion=(0, 0), texto="", font=None, color_principal=None, color_sobrepuesto=None):
 		self.imagen = imagen
 		self.posicion_x = posicion[0]
 		self.posicion_y = posicion[1]
@@ -7,7 +7,7 @@ class Boton():
 		self.color_principal = color_principal
 		self.color_sobrepuesto =  color_sobrepuesto
 		self.texto_input = texto
-		self.texto = self.font.render(self.texto_input, True, self.color_principal)
+		self.texto = self.font.render(self.texto_input, False, self.color_principal)
 		if self.imagen is None:
 			self.imagen = self.texto
 		self.rect = self.imagen.get_rect(center=(self.posicion_x, self.posicion_y))

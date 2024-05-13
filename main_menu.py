@@ -1,18 +1,26 @@
-import pygame, sys, imageio, random
+import imageio
+import pygame
+import sys
+
 from boton import Boton
+from font import obtener_font
+from elementos import Jugador, Enemigo, Bala, Respuesta, nueva_pregunta, preguntas_mostradas
 
 pygame.init()
 
+# Colores
+negro = (0, 0, 0)
+blanco = (255, 255, 255)
+
 # Propiedades de la ventana
-ancho, alto = 1080, 720
-pantalla = pygame.display.set_mode((ancho, alto))
+ANCHO, ALTO = 1080, 720
+pantalla = pygame.display.set_mode((ANCHO, ALTO))
 pygame.display.set_caption("Programming Shoot 1.0")
 icono = pygame.image.load("assets/imagenes/target.png")
 pygame.display.set_icon(icono)
 
 # Configuración audio
-musica_bg = pygame.mixer.music.load("assets/audio/musica_bg.ogg")
-musica_bg.play()
+musica_bg = pygame.mixer.Sound("assets/audio/musica_bg.ogg")
 
 # Carga de sonidos
 sonido_disparo = pygame.mixer.Sound("assets/audio/disparo.wav")
@@ -20,152 +28,26 @@ sonido_impacto = pygame.mixer.Sound("assets/audio/explosion.wav")
 sonido_click = pygame.mixer.Sound("assets/audio/click.wav")
 
 
-def obtener_font(tamaño):
-    return pygame.font.Font("assets/font/space_invaders.ttf", tamaño)
-
 def game_over():
+    musica_bg.stop()
     pantalla.fill("Black")
     sonido_game_over = pygame.mixer.Sound("assets/audio/game_over.wav")
     sonido_game_over.play()
-    sonido
 
-    game_over_texto = obtener_font(80).render("GAME OVER", True, "White")
-    game_over_rect = game_over_texto.get_rect(center=(ancho // 2, alto // 2))
+    game_over_texto = obtener_font(80).render("GAME OVER", True, blanco)
+    game_over_rect = game_over_texto.get_rect(center=(ANCHO // 2, ALTO // 2))
     pantalla.blit(game_over_texto, game_over_rect)
 
     pygame.display.flip()
 
-    pygame.time.delay(2000)  # Esperar 2 segundos antes de volver al menú principal
+    pygame.time.delay(4000)  # Esperar 2 segundos antes de volver al menú principal
     menu_principal()
 
-def jugar():
-    # Colores
-    negro = (0, 0, 0)
-    blanco = (255, 255, 255)
 
+def jugar():
     # Configuración de la pantalla
     pygame.display.set_caption("Juego")
     reloj = pygame.time.Clock()
-
-    # Clase del Jugador
-    class Jugador(pygame.sprite.Sprite):
-        def __init__(self):
-            super().__init__()
-            self.image = pygame.image.load("assets/imagenes/jugador.png").convert_alpha()
-            self.rect = self.image.get_rect()
-            self.rect.centerx = ancho // 2
-            self.rect.bottom = alto - 50
-            self.speed_x = 0
-
-        def update(self):
-            self.speed_x = 0
-            tecla_oprimida = pygame.key.get_pressed()
-            if tecla_oprimida[pygame.K_LEFT]:
-                self.speed_x = -4
-            if tecla_oprimida[pygame.K_RIGHT]:
-                self.speed_x = 4
-            self.rect.x += self.speed_x
-            if self.rect.right > ancho:
-                self.rect.right = ancho
-            if self.rect.left < 0:
-                self.rect.left = 0
-
-    # Clase del Enemigo
-    class Enemigo(pygame.sprite.Sprite):
-        def __init__(self, respuesta):
-            super().__init__()
-            self.image = pygame.image.load("assets/imagenes/enemigo.png").convert_alpha()
-            self.rect = self.image.get_rect()
-            self.rect.x = random.randrange(ancho - self.rect.width)
-            self.rect.y = random.randrange(-alto, -10)
-            self.speedy = random.uniform(1, 1.5)
-            self.speedx = random.choice([-1, 1]) * random.uniform(1, 3)  # Velocidad aleatoria en x
-            self.respuesta = respuesta
-
-        def update(self):
-            self.rect.y += self.speedy
-            self.rect.x += self.speedx
-
-            # Rebotar en los bordes de la pantalla
-            if self.rect.left < 0 or self.rect.right > ancho:
-                self.speedx *= -1  # Invertir la dirección en x
-
-            if self.rect.top > alto:
-                self.rect.x = random.randrange(ancho - self.rect.width)
-                self.rect.y = random.randrange(-alto, -10)
-                self.speedy = random.uniform(1, 1.5)
-                self.speedx = random.uniform(1, 1.5)
-
-    # Clase de la Bala
-    class Bala(pygame.sprite.Sprite):
-        def __init__(self, x, y):
-            super().__init__()
-            self.image = pygame.image.load("assets/imagenes/laser.png").convert_alpha()
-            self.rect = self.image.get_rect()
-            self.rect.y = y
-            self.rect.centerx = x
-            self.speedy = -10
-
-        def update(self):
-            self.rect.y += self.speedy
-            if self.rect.bottom < 0:
-                self.kill()
-
-    # Clase de la Respuesta
-    class Respuesta(pygame.sprite.Sprite):
-        def __init__(self, text, enemy):
-            super().__init__()
-            self.text = text
-            self.font = pygame.font.Font(None, 24)
-            self.image = self.font.render(text, True, blanco)
-            self.rect = self.image.get_rect()
-            self.enemy = enemy
-
-        def update(self):
-            self.rect.centerx = self.enemy.rect.centerx
-            self.rect.centery = self.enemy.rect.centery + 40
-
-    # Función para generar una nueva pregunta y respuestas
-    def nueva_pregunta():
-        preguntas = [
-            "¿Qué palabra clave se utiliza en Python para definir una función?",
-            "¿Cuál es la función que se utiliza para imprimir en la consola en Python?",
-            "¿Cuál es el resultado de 2 + 3 * 4?",
-            "¿Qué es una lista?",
-            "¿Qué es un diccionario en Python?",
-            "¿Cuál es el operador para comparar igualdad en Python?",
-            "¿Qué hace el método .append() en una lista?",
-            "¿Qué es un bucle for?"
-
-        ]
-        respuestas_correctas = [
-            ["def", "define", "func", "fuction"],
-            ["print()", "display()", "show()", "console.log()"],
-            ["14", "18", "20", "11"],
-            ["Conjunto de elementos", "Texto largo", "indice numérico", "Código de error"],
-            ["Colección de pares clave-valor", "Libro de definiciones", "Lista ordenada", "Serie numérica"],
-            ["==", "=", "!=", "<>"],
-            ["Agrega un elemento", "Elimina un elemento", "Reemplaza un elemento", "Ordena la lista"],
-            ["Iteración de elementos", "Lista de funciones", "Expresión matemática", "Estructura condicional"]
-        ]
-
-        # Verificar si se han mostrado todas las preguntas
-        if len(preguntas_mostradas) == len(preguntas):
-            pygame.quit()  # Cerrar el juego si se han mostrado todas las preguntas
-        else:
-            # Obtener una pregunta no mostrada
-            pregunta_nueva = random.choice([pregunta for pregunta in preguntas if pregunta not in preguntas_mostradas])
-            indice_pregunta = preguntas.index(pregunta_nueva)
-
-            # Agregar la pregunta a las preguntas mostradas
-            preguntas_mostradas.append(pregunta_nueva)
-
-            # Obtener respuestas correspondientes
-            respuestas = respuestas_correctas[indice_pregunta]
-            respuesta_correcta = respuestas[0]  # La primera respuesta es la correcta
-            random.shuffle(respuestas)
-
-            return pregunta_nueva, respuestas, respuesta_correcta
 
     # Grupos de sprites
     all_sprites = pygame.sprite.Group()
@@ -175,9 +57,6 @@ def jugar():
     # Crear Jugador
     jugador = Jugador()
     all_sprites.add(jugador)
-
-    # Preguntas mostradas
-    preguntas_mostradas = []
 
     # Pregunta inicial
     pregunta, respuestas, respuesta_correcta = nueva_pregunta()
@@ -191,10 +70,10 @@ def jugar():
         all_sprites.add(respuesta_sprite)
 
     # Imagenes de fondo
-    fondo_1 = pygame.image.load("assets/imagenes/fondo_juego.jpg").convert()
-    fondo_2 = pygame.image.load("assets/imagenes/fondo_juego.jpg").convert()
-    fondo_1 = pygame.transform.scale(fondo_1, (ancho, alto))
-    fondo_2 = pygame.transform.scale(fondo_2, (ancho, alto))
+    fondo_1 = pygame.image.load("assets/imagenes/fondo_juego.png").convert()
+    fondo_2 = pygame.image.load("assets/imagenes/fondo_juego.png").convert()
+    fondo_1 = pygame.transform.scale(fondo_1, (ANCHO, ALTO))
+    fondo_2 = pygame.transform.scale(fondo_2, (ANCHO, ALTO))
     fondo_y = 0  # Initial vertical position of the background
 
     iniciar = True
@@ -261,15 +140,15 @@ def jugar():
         # Dibujar fondos y pregunta
         pantalla.fill(negro)
         pantalla.blit(fondo_1, (0, fondo_y))
-        pantalla.blit(fondo_2, (0, fondo_y - alto))
-        pregunta_surface = pygame.font.Font(None, 36).render(pregunta, True, blanco)
-        pregunta_rect = pregunta_surface.get_rect(center=(ancho // 2, 50))
+        pantalla.blit(fondo_2, (0, fondo_y - ALTO))
+        pregunta_surface = obtener_font(22).render(pregunta, False, blanco)
+        pregunta_rect = pregunta_surface.get_rect(center=(ANCHO // 2, 50))
         pantalla.blit(pregunta_surface, pregunta_rect)
 
         fondo_y += 3.5  # Velocidad del fondo
 
         # Resetear fondos cuando salen de la pantalla
-        if fondo_y >= alto:
+        if fondo_y >= ALTO:
             fondo_y = 0
 
         all_sprites.draw(pantalla)
@@ -278,20 +157,22 @@ def jugar():
 
     pygame.quit()
 
+
 def ajustes():
+    musica_bg.stop()
     ejecutando = True
 
     while ejecutando:
         posicion_mouse = pygame.mouse.get_pos()
 
-        pantalla.fill("white")
+        pantalla.fill(blanco)
 
-        ajustes_texto = obtener_font(35).render("Pantalla de ajustes en construccion.", True, "Black")
+        ajustes_texto = obtener_font(35).render("Pantalla de ajustes en construccion.", True, negro)
         ajustes_rect = ajustes_texto.get_rect(center=(540, 260))
         pantalla.blit(ajustes_texto, ajustes_rect)
 
-        ajustes_atras = Boton(imagen=None, posicion=(540, 460),
-                            texto="ATRAS", font=obtener_font(75), color_principal="Black", color_sobrepuesto="Green")
+        ajustes_atras = Boton(None, (540, 460),
+                              "ATRAS", obtener_font(75), negro, "Green")
 
         ajustes_atras.cambiar_color(posicion_mouse)
         ajustes_atras.actualizar(pantalla)
@@ -307,15 +188,22 @@ def ajustes():
 
         pygame.display.update()
 
+
 def salir():
-    print("Salir")
+    pygame.quit()
+    sys.exit()
+
 
 def menu_principal():
+    # Iniciar la musica de fondo
+    musica_bg.play(-1)
 
-    # Inicializacion del fondo
+    # Iniciar el gif del fondo
     gif = 'assets/imagenes/space.gif'
     gif_frames = imageio.mimread(gif)
-    gif_frames_escalados = [pygame.transform.scale(pygame.image.frombuffer(frame.tobytes(), frame.shape[1::-1], "RGB"), (ancho, alto)) for frame in gif_frames]
+    gif_frames_escalados = [
+        pygame.transform.scale(pygame.image.frombuffer(frame.tobytes(), frame.shape[1::-1], "RGB"), (ANCHO, ALTO)) for
+        frame in gif_frames]
 
     # Variables de tiempo
     clock = pygame.time.Clock()
@@ -340,20 +228,19 @@ def menu_principal():
         posicion_mouse = pygame.mouse.get_pos()
 
         # Creacion del texto principal del menu
-        menu_texto = obtener_font(80).render("SPACE SHOOTER", True, "#ffffff")
+        menu_texto = obtener_font(60).render("PROGRAMMING SHOOT 1.0", False, blanco)
         menu_rect = menu_texto.get_rect(center=(540, 100))
 
         # Dibujar en pantalla el texto y rect creados
         pantalla.blit(menu_texto, menu_rect)
 
         # Creacion de los botones con atributos heredados de la clase Boton
-        boton_jugar = Boton(imagen=pygame.image.load("assets/imagenes/rect_salir.png"), posicion=(540, 260), texto="JUGAR",
-                            font=obtener_font(40), color_principal="#ffffff", color_sobrepuesto="#ffffff")
-        boton_ajustes = Boton(imagen=pygame.image.load("assets/imagenes/rect_salir.png"), posicion=(540, 380),
-                              texto="AJUSTES", font=obtener_font(40), color_principal="#ffffff",
-                              color_sobrepuesto="#ffffff")
-        boton_salir = Boton(imagen=pygame.image.load("assets/imagenes/rect_salir.png"), posicion=(540, 500),
-                            texto="SALIR", font=obtener_font(40), color_principal="#ffffff", color_sobrepuesto="#ffffff")
+        boton_jugar = Boton(pygame.image.load("assets/imagenes/rect_salir.png"), (540, 290),
+                            "JUGAR", obtener_font(40), blanco, blanco)
+        boton_ajustes = Boton(pygame.image.load("assets/imagenes/rect_salir.png"), (540, 410),
+                              "AJUSTES", obtener_font(40), blanco, blanco)
+        boton_salir = Boton(pygame.image.load("assets/imagenes/rect_salir.png"), (540, 530),
+                            "SALIR", obtener_font(40), blanco, blanco)
 
         # Ciclo para cambiar color del boton al sobreponer el mouse
         for boton in [boton_jugar, boton_ajustes, boton_salir]:
@@ -381,5 +268,6 @@ def menu_principal():
 
     pygame.quit()
     sys.exit()
+
 
 menu_principal()
