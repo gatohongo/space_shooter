@@ -16,7 +16,7 @@ blanco = (255, 255, 255)
 ANCHO, ALTO = 1080, 720
 pantalla = pygame.display.set_mode((ANCHO, ALTO))
 pygame.display.set_caption("Programming Shoot 1.0")
-icono = pygame.image.load("assets/imagenes/target.png")
+icono = pygame.image.load("assets/imagenes/icon.png")
 pygame.display.set_icon(icono)
 
 # Configuración audio
@@ -28,20 +28,80 @@ sonido_impacto = pygame.mixer.Sound("assets/audio/explosion.wav")
 sonido_click = pygame.mixer.Sound("assets/audio/click.wav")
 
 
-def game_over():
-    musica_bg.stop()
-    pantalla.fill("Black")
-    sonido_game_over = pygame.mixer.Sound("assets/audio/game_over.wav")
-    sonido_game_over.play()
+def menu_principal():
+    # Iniciar la musica de fondo
+    musica_bg.play(-1)
 
-    game_over_texto = obtener_font(80).render("GAME OVER", True, blanco)
-    game_over_rect = game_over_texto.get_rect(center=(ANCHO // 2, ALTO // 2))
-    pantalla.blit(game_over_texto, game_over_rect)
+    # Iniciar el gif del fondo
+    gif = 'assets/imagenes/space.gif'
+    gif_frames = imageio.mimread(gif)
+    gif_frames_escalados = [
+        pygame.transform.scale(pygame.image.frombuffer(frame.tobytes(), frame.shape[1::-1], "RGB"), (ANCHO, ALTO)) for
+        frame in gif_frames]
 
-    pygame.display.flip()
+    # Variables de tiempo
+    clock = pygame.time.Clock()
+    FPS = 60
+    indice_frame = 0
 
-    pygame.time.delay(4000)  # Esperar 2 segundos antes de volver al menú principal
-    menu_principal()
+    # Ciclo de la ventana
+    running = True
+
+    while running:
+
+        # Frame actual del GIF
+        frame_actual = gif_frames_escalados[indice_frame]
+
+        # Dibujar el frame actual
+        pantalla.blit(frame_actual, (0, 0))
+
+        # Actualizar el indice para la siguiente iteracion
+        indice_frame = (indice_frame + 1) % len(gif_frames_escalados)
+
+        # Eventos de mouse
+        posicion_mouse = pygame.mouse.get_pos()
+
+        # Creacion del texto principal del menu
+        menu_texto = obtener_font(60).render("PROGRAMMING SHOOT 1.0", False, blanco)
+        menu_rect = menu_texto.get_rect(center=(540, 100))
+
+        # Dibujar en pantalla el texto y rect creados
+        pantalla.blit(menu_texto, menu_rect)
+
+        # Creacion de los botones con atributos heredados de la clase Boton
+        boton_jugar = Boton(pygame.image.load("assets/imagenes/rect_salir.png"), (540, 290),
+                            "JUGAR", obtener_font(40), blanco, blanco)
+        boton_ajustes = Boton(pygame.image.load("assets/imagenes/rect_salir.png"), (540, 410),
+                              "AJUSTES", obtener_font(40), blanco, blanco)
+        boton_salir = Boton(pygame.image.load("assets/imagenes/rect_salir.png"), (540, 530),
+                            "SALIR", obtener_font(40), blanco, blanco)
+
+        # Ciclo para cambiar color del boton al sobreponer el mouse
+        for boton in [boton_jugar, boton_ajustes, boton_salir]:
+            boton.cambiar_color(posicion_mouse)
+            boton.actualizar(pantalla)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if boton_jugar.obtener_evento(posicion_mouse):
+                    sonido_click.play()  # Sonido de click
+                    jugar()
+                if boton_ajustes.obtener_evento(posicion_mouse):
+                    sonido_click.play()  # Sonido de click
+                    ajustes()
+                if boton_salir.obtener_evento(posicion_mouse):
+                    sonido_click.play()  # Sonido de click
+                    pygame.quit()
+                    sys.exit()
+
+        pygame.display.update()
+        clock.tick(FPS)
+
+    pygame.quit()
+    sys.exit()
 
 
 def jugar():
@@ -189,83 +249,23 @@ def ajustes():
         pygame.display.update()
 
 
+def game_over():
+    musica_bg.stop()
+    pantalla.fill("Black")
+    sonido_game_over = pygame.mixer.Sound("assets/audio/game_over.wav")
+    sonido_game_over.play()
+
+    game_over_texto = obtener_font(80).render("GAME OVER", True, blanco)
+    game_over_rect = game_over_texto.get_rect(center=(ANCHO // 2, ALTO // 2))
+    pantalla.blit(game_over_texto, game_over_rect)
+
+    pygame.display.flip()
+
+    pygame.time.delay(4000)  # Esperar 2 segundos antes de volver al menú principal
+    menu_principal()
+
+
 def salir():
-    pygame.quit()
-    sys.exit()
-
-
-def menu_principal():
-    # Iniciar la musica de fondo
-    musica_bg.play(-1)
-
-    # Iniciar el gif del fondo
-    gif = 'assets/imagenes/space.gif'
-    gif_frames = imageio.mimread(gif)
-    gif_frames_escalados = [
-        pygame.transform.scale(pygame.image.frombuffer(frame.tobytes(), frame.shape[1::-1], "RGB"), (ANCHO, ALTO)) for
-        frame in gif_frames]
-
-    # Variables de tiempo
-    clock = pygame.time.Clock()
-    FPS = 60
-    indice_frame = 0
-
-    # Ciclo de la ventana
-    running = True
-
-    while running:
-
-        # Frame actual del GIF
-        frame_actual = gif_frames_escalados[indice_frame]
-
-        # Dibujar el frame actual
-        pantalla.blit(frame_actual, (0, 0))
-
-        # Actualizar el indice para la siguiente iteracion
-        indice_frame = (indice_frame + 1) % len(gif_frames_escalados)
-
-        # Eventos de mouse
-        posicion_mouse = pygame.mouse.get_pos()
-
-        # Creacion del texto principal del menu
-        menu_texto = obtener_font(60).render("PROGRAMMING SHOOT 1.0", False, blanco)
-        menu_rect = menu_texto.get_rect(center=(540, 100))
-
-        # Dibujar en pantalla el texto y rect creados
-        pantalla.blit(menu_texto, menu_rect)
-
-        # Creacion de los botones con atributos heredados de la clase Boton
-        boton_jugar = Boton(pygame.image.load("assets/imagenes/rect_salir.png"), (540, 290),
-                            "JUGAR", obtener_font(40), blanco, blanco)
-        boton_ajustes = Boton(pygame.image.load("assets/imagenes/rect_salir.png"), (540, 410),
-                              "AJUSTES", obtener_font(40), blanco, blanco)
-        boton_salir = Boton(pygame.image.load("assets/imagenes/rect_salir.png"), (540, 530),
-                            "SALIR", obtener_font(40), blanco, blanco)
-
-        # Ciclo para cambiar color del boton al sobreponer el mouse
-        for boton in [boton_jugar, boton_ajustes, boton_salir]:
-            boton.cambiar_color(posicion_mouse)
-            boton.actualizar(pantalla)
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if boton_jugar.obtener_evento(posicion_mouse):
-                    sonido_click.play()  # Sonido de click
-                    jugar()
-                if boton_ajustes.obtener_evento(posicion_mouse):
-                    sonido_click.play()  # Sonido de click
-                    ajustes()
-                if boton_salir.obtener_evento(posicion_mouse):
-                    sonido_click.play()  # Sonido de click
-                    pygame.quit()
-                    sys.exit()
-
-        pygame.display.update()
-        clock.tick(FPS)
-
     pygame.quit()
     sys.exit()
 
