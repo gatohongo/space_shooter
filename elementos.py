@@ -6,6 +6,15 @@ ANCHO = 1080
 ALTO = 720
 blanco = (255, 255, 255)
 preguntas_mostradas = []
+vidas = 4
+pantalla_juego = pygame.display.set_mode((ANCHO, ALTO))
+explosion_imgs = [pygame.image.load("assets/imagenes/explosion_1.png"),
+                  pygame.image.load("assets/imagenes/explosion_2.png"),
+                  pygame.image.load("assets/imagenes/explosion_3.png"),
+                  pygame.image.load("assets/imagenes/explosion_4.png"),
+                  pygame.image.load("assets/imagenes/explosion_5.png"),
+                  pygame.image.load("assets/imagenes/explosion_6.png"),
+                  pygame.image.load("assets/imagenes/explosion_7.png")]
 
 
 # Clase del Jugador
@@ -20,6 +29,7 @@ class Jugador(pygame.sprite.Sprite):
         self.rect.centerx = ANCHO // 2
         self.rect.bottom = ALTO - 50
         self.speed_x = 0
+        self.vidas = 4
 
     def update(self):
         self.speed_x = 0
@@ -63,6 +73,34 @@ class Enemigo(pygame.sprite.Sprite):
             self.speedx = random.uniform(1, 1.5)
 
 
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image_index = 0
+        self.image_original = explosion_imgs[self.image_index]
+        self.image = pygame.transform.scale(self.image_original, (120, 108))
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.animation_speed = 0.2  # Velocidad de animación de la explosión
+        self.last_update = pygame.time.get_ticks()
+        self.lifetime = 2000  # Duración de la explosión en milisegundos (1 segundos)
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.animation_speed * 1000:
+            self.last_update = now
+            self.image_index += 1
+            if self.image_index >= len(explosion_imgs):
+                self.kill()  # Eliminar la explosión después de mostrar todas las imágenes
+            else:
+                self.image = explosion_imgs[self.image_index]
+
+        # Restar el tiempo transcurrido desde la última actualización al tiempo de vida de la explosión
+        self.lifetime -= now - self.last_update
+        if self.lifetime <= 0:
+            self.kill()  # Eliminar la explosión si el tiempo de vida restante es menor o igual a cero
+
+
 # Clase de la Bala
 class Bala(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -96,7 +134,7 @@ class Respuesta(pygame.sprite.Sprite):
 
 
 # Función para generar una nueva pregunta y respuestas
-def nueva_pregunta():
+def nueva_pregunta(preguntas_mostradas):
     preguntas = [
         "¿Que palabra clave se utiliza en Python para definir una funcion?",
         "¿Cual es la funcion que se utiliza para imprimir en la consola en Python?",
@@ -105,8 +143,13 @@ def nueva_pregunta():
         "¿Que es un diccionario en Python?",
         "¿Cual es el operador para comparar igualdad en Python?",
         "¿Que hace el metodo .append() en una lista?",
-        "¿Que es un bucle for?"
-
+        "¿Que es un bucle for?",
+        "¿Cual es el tipo de dato que puede contener varios elementos en Python?",
+        "¿Que funcion se utiliza para obtener la longitud de una lista en Python?",
+        "¿Que operador se utiliza para concatenar dos cadenas en Python?",
+        "¿Cual es la palabra clave que se utiliza para definir una condicion en Python?",
+        "¿Nombre del bucle que se ejecuta mientras una condicion sea verdadera en Python?",
+        "¿Cual es el operador de exponenciacion en Python?"
     ]
     respuestas_correctas = [
         ["def", "define", "func", "function"],
@@ -116,23 +159,29 @@ def nueva_pregunta():
         ["Coleccion de pares clave-valor", "Libro de definiciones", "Lista ordenada", "Serie numerica"],
         ["==", "=", "!=", "<>"],
         ["Agrega un elemento", "Elimina un elemento", "Reemplaza un elemento", "Ordena la lista"],
-        ["Iteracion de elementos", "Lista de funciones", "Expresion matematica", "Estructura condicional"]
+        ["Iteracion de elementos", "Lista de funciones", "Expresion matematica", "Estructura condicional"],
+        ["lista", "array", "conjunto", "colección"],
+        ["len()", "length()", "longitud()", "size()"],
+        ["+", "concat()", "append()", "add()"],
+        ["if", "else", "elif", "condición"],
+        ["while", "for", "loop", "ciclo"],
+        ["**", "^", "exp()", "exp"]
     ]
 
     # Verificar si se han mostrado todas las preguntas
-    if len(preguntas_mostradas) == len(preguntas):
-        pygame.quit()  # Cerrar el juego si se han mostrado todas las preguntas
-    else:
-        # Obtener una pregunta no mostrada
-        pregunta_nueva = random.choice([pregunta for pregunta in preguntas if pregunta not in preguntas_mostradas])
-        indice_pregunta = preguntas.index(pregunta_nueva)
+    if len(preguntas_mostradas) >= len(preguntas):
+        preguntas_mostradas.clear()
 
-        # Agregar la pregunta a las preguntas mostradas
-        preguntas_mostradas.append(pregunta_nueva)
+    # Obtener una pregunta no mostrada
+    pregunta_nueva = random.choice([pregunta for pregunta in preguntas if pregunta not in preguntas_mostradas])
+    indice_pregunta = preguntas.index(pregunta_nueva)
 
-        # Obtener respuestas correspondientes
-        opciones_respuesta = respuestas_correctas[indice_pregunta]
-        respuesta_correcta_valida = opciones_respuesta[0]  # La primera respuesta es la correcta
-        random.shuffle(opciones_respuesta)
+    # Agregar la pregunta a las preguntas mostradas
+    preguntas_mostradas.append(pregunta_nueva)
 
-        return pregunta_nueva, opciones_respuesta, respuesta_correcta_valida
+    # Obtener respuestas correspondientes
+    opciones_respuesta = respuestas_correctas[indice_pregunta]
+    respuesta_correcta_valida = opciones_respuesta[0]  # La primera respuesta es la correcta
+    random.shuffle(opciones_respuesta)
+
+    return pregunta_nueva, opciones_respuesta, respuesta_correcta_valida
